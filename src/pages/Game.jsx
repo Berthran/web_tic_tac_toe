@@ -21,10 +21,10 @@ function Board({ xIsNext, squares, onPlay, winningLine }) {
     const boardSize = 3;
     const rows = [];
     for (let i = 0; i < boardSize; i++) {
-        const squares = [];
+        const row = [];
         for (let j = 0; j < boardSize; j++) {
             const index = i * boardSize + j;
-            squares.push(
+            row.push(
                 <Square
                     key={index}
                     value={squares[index]}
@@ -33,7 +33,7 @@ function Board({ xIsNext, squares, onPlay, winningLine }) {
                 />
             );
         }
-        rows.push(<div key={i} className="board-row">{squares}</div>);
+        rows.push(<div key={i} className="board-row">{row}</div>);
     }
 
     return (
