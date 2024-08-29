@@ -1,21 +1,12 @@
-// import { useState } from 'react'
-import './App.css'
+import React from 'react'
 
-function App() {
-  // const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <>
-      <div className='bg-green-500'>
-        <h1>Tic-Tac-Toe Game</h1>
-        <div className="card">
-          {/* Game interface goes here */}
-        </div>
-        <p className="read-the-docs">
-        </p>
-      </div>
-    </>
+    <div className='bg-green-500 border-4 rounded-lg '>
+      <h1>
+        Tic-Tac-Toe
+      </h1>
+    </div>
   )
 }
 
-export default App
