@@ -27,7 +27,6 @@ def create_game_board():
 def on_join(data):
     room = data['room']
     username = data['username']
-    ai = data.get('ai', None)
     join_room(room)
     
     # Initialize game if it doesn't exist

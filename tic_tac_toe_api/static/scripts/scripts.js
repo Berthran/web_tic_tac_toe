@@ -48,18 +48,6 @@ let socket = io();
             }
         }
 
-            function computerPlay() {
-                let username = document.getElementById('username').value;
-                room = 'computer_game';
-
-                if (username) {
-                    socket.emit('join', {username: username, room: room, ai: 'ai'});
-                    document.getElementById('board').style.display = 'block';
-                    document.getElementById('restartBtn').style.display = 'block';
-                } else {
-                    alert("What's your name?.");
-                }
-            }
         function updateBoard(board) {
         let boardDiv = document.getElementById('board');
         boardDiv.innerHTML = '';  // Clear previous board
