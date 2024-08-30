@@ -97,3 +97,37 @@ body {
   scroll-behavior: smooth !important;
   scroll-padding-top: 45vh;
 }
+
+.board-row {
+  clear: both;
+  display: flex;
+}
+
+.game-cell {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #333;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.game-cell:hover {
+  background-color: #f0f0f0;
+}
+
+.button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}

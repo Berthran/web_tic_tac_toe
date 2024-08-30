@@ -1,119 +1,197 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import io from 'socket.io-client';
 
-function Square({ value, onSquareClick, highlight }) {
-    return (
-        <button className={`square ${highlight ? 'highlight' : ''}`} onClick={onSquareClick}>
-            {value}
-        </button>
-    );
-}
-
-function Board({ xIsNext, squares, onPlay, winningLine }) {
-    function handleClick(i) {
-        if (squares[i] || calculateWinner(squares)) {
-            return;
-        }
-        const nextSquares = squares.slice();
-        nextSquares[i] = xIsNext ? "X" : "O";
-        onPlay(nextSquares, i);
-    }
-
-    const boardSize = 3;
-    const rows = [];
-    for (let i = 0; i < boardSize; i++) {
-        const row = [];
-        for (let j = 0; j < boardSize; j++) {
-            const index = i * boardSize + j;
-            row.push(
-                <Square
-                    key={index}
-                    value={squares[index]}
-                    onSquareClick={() => handleClick(index)}
-                    highlight={winningLine && winningLine.includes(index)}
-                />
-            );
-        }
-        rows.push(<div key={i} className="board-row">{row}</div>);
-    }
-
-    return (
-        <>
-            {rows}
-        </>
-    );
-}
+const socket = io('http://192.168.8.143:5000'); // Update this URL if your Flask server URL is different
 
 export default function Game() {
-    const [history, setHistory] = useState([{ squares: Array(9).fill(null), location: null }]);
-    const [currentMove, setCurrentMove] = useState(0);
-    const [isAscending, setIsAscending] = useState(true);
-    const xIsNext = currentMove % 2 === 0;
-    const currentSquares = history[currentMove].squares;
+  const [username, setUsername] = useState('');
+  const [room, setRoom] = useState('');
+  const [isGameStarted, setIsGameStarted] = useState(false);
+  const [board, setBoard] = useState([[" ", " ", " "], [" ", " ", " "], [" ", " ", " "]]);
+  const [players, setPlayers] = useState([]);
+  const [gameOverMessage, setGameOverMessage] = useState('');
+  const [stats, setStats] = useState({
+    wins: 0,
+    losses: 0,
+    draws: 0
+  });
+  const [scores, setScores] = useState({});
+  const [playWithAI, setPlayWithAI] = useState(false); // New state to track AI play
 
-    const winner = calculateWinner(currentSquares);
-    const winningLine = winner ? winner.line : null;
-
-    function handlePlay(nextSquares, location) {
-        const nextHistory = [...history.slice(0, currentMove + 1), { squares: nextSquares, location }];
-        setHistory(nextHistory);
-        setCurrentMove(nextHistory.length - 1);
+  useEffect(() => {
+    const savedStats = localStorage.getItem(username);
+    if (savedStats) {
+      setStats(JSON.parse(savedStats));
     }
 
-    function jumpTo(nextMove) {
-        setCurrentMove(nextMove);
-    }
-
-    const moves = history.map((step, move) => {
-        const desc = move === currentMove
-            ? `You are at move #${move}`
-            : move
-                ? `Go to move #${move} (${Math.floor(step.location / 3) + 1}, ${step.location % 3 + 1})`
-                : 'Go to game start';
-        return (
-            <li key={move}>
-                <button onClick={() => jumpTo(move)}>{desc}</button>
-            </li>
-        );
+    socket.on('board_update', (data) => {
+      setBoard(data.board);
+      setPlayers(data.players);
+      setIsGameStarted(true);
+      setGameOverMessage('');
     });
 
-    const status = winner
-        ? "Winner is: " + winner.player
-        : history.length === 10
-            ? "It's a draw!"
-            : "Next player: " + (xIsNext ? "X" : "O");
+    socket.on('player_assignment', (data) => {
+      alert(`You are player ${data.player} (${data.username})`);
+    });
 
-    return (
-        <div className="game">
-            <div className="game-board">
-                <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} winningLine={winningLine} />
-            </div>
-            <div className="game-info">
-                <div className="status">{status}</div>
-                <button onClick={() => setIsAscending(!isAscending)}>
-                    {isAscending ? "Sort Descending" : "Sort Ascending"}
-                </button>
-                <ol>{isAscending ? moves : moves.reverse()}</ol>
-            </div>
-        </div>
-    );
+    socket.on('game_over', (data) => {
+      if (data.winner === 'Tie') {
+        setGameOverMessage('Draw, no winner');
+        setStats(prevStats => ({ ...prevStats, draws: prevStats.draws + 1 }));
+      } else {
+        const winner = data.winner;
+        setGameOverMessage(`${winner} wins!`);
+        if (players.find(p => p.username === winner)) {
+          setStats(prevStats => ({ ...prevStats, wins: prevStats.wins + 1 }));
+        } else {
+          setStats(prevStats => ({ ...prevStats, losses: prevStats.losses + 1 }));
+        }
+      }
+      setBoard([[" ", " ", " "], [" ", " ", " "], [" ", " ", " "]]);
+    });
+
+    return () => {
+      socket.off('board_update');
+      socket.off('player_assignment');
+      socket.off('game_over');
+    };
+  }, [stats, players, username]);
+
+  useEffect(() => {
+    localStorage.setItem(username, JSON.stringify(stats));
+  }, [stats]);
+
+  function handleCreateRoom() {
+    if (username) {
+      const generatedRoom = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const chosenSymbol = 'X'; // Default symbol for the player creating the room
+      setRoom(generatedRoom);
+      socket.emit('join', { username: username, room: generatedRoom, symbol: chosenSymbol, playWithAI: playWithAI });
+    } else {
+      alert("Please enter a username to create a room.");
+    }
+  }
+  
+
+  function handleJoinRoom() {
+    if (username && room) {
+      socket.emit('join', { username: username, room: room });
+    } else {
+      alert("Please enter both a username and a room code.");
+    }
+  }
+  
+  function handleRestartGame() {
+    setGameOverMessage('');
+    socket.emit('restart', { room: room });
+  }
+
+  function handleNewGame() {
+    setIsGameStarted(false);
+    setRoom('');
+    setBoard([[" ", " ", " "], [" ", " ", " "], [" ", " ", " "]]);
+    setPlayers([]);
+    setGameOverMessage('');
+  }
+
+  function handleCellClick(row, col) {
+    const player = players.find((p) => p.username === username);
+    if (player) {
+        socket.emit('make_move', { row: row, col: col, player: player.symbol, room: room });
+    }
 }
 
-function calculateWinner(squares) {
-    const lines = [
-        [0, 1, 2],
-        [3, 4, 5],
-        [6, 7, 8],
-        [0, 3, 6],
-        [1, 4, 7],
-        [2, 5, 8],
-        [0, 4, 8],
-        [2, 4, 6],
-    ];
-    for (let i = 0; i < lines.length; i++) {
-        const [a, b, c] = lines[i];
-        if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-            return { player: squares[a], line: lines[i] };
-        }
-    }
-    return null;
+
+  return (
+    <div className="h-screen flex flex-col items-center justify-center bg-gray-100">
+      {!isGameStarted ? (
+        <div className="flex flex-col items-center space-y-4">
+          <input
+            type="text"
+            placeholder="Enter your username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="p-2 border border-gray-300 rounded"
+          />
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={playWithAI}
+              onChange={() => setPlayWithAI(!playWithAI)}
+            />
+            <label>Play with AI</label>
+          </div>
+          <div className="flex space-x-4">
+            <button
+              onClick={handleCreateRoom}
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              Create Room
+            </button>
+            <input
+              type="text"
+              placeholder="Enter room code"
+              value={room}
+              onChange={(e) => setRoom(e.target.value)}
+              className="p-2 border border-gray-300 rounded"
+            />
+            <button
+              onClick={handleJoinRoom}
+              className="bg-green-500 text-white px-4 py-2 rounded"
+            >
+              Join Room
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div className="text-lg font-bold mb-2">
+            {players.map(p => (
+              <div key={p.username}>{p.username} ({p.symbol})</div>
+            ))}
+          </div>
+          <div className="text-lg font-bold mb-4">
+            Room Code: <span className="text-blue-500">{room}</span>
+            <button
+              className="ml-2 text-sm text-blue-700 underline"
+              onClick={() => navigator.clipboard.writeText(room)}
+            >
+              Copy
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {board.map((row, rowIndex) =>
+              row.map((cell, colIndex) => (
+                <button
+                  key={`${rowIndex}-${colIndex}`}
+                  onClick={() => handleCellClick(rowIndex, colIndex)}
+                  className="w-16 h-16 text-xl font-bold border border-gray-400"
+                >
+                  {cell}
+                </button>
+              ))
+            )}
+          </div>
+          {gameOverMessage && (
+            <div className="mt-4 text-red-500 font-semibold">{gameOverMessage}</div>
+          )}
+          <div className="mt-4 flex justify-center space-x-4">
+            <button
+              onClick={handleRestartGame}
+              className="bg-yellow-500 text-white px-4 py-2 rounded"
+            >
+              Restart Game
+            </button>
+            <button
+              onClick={handleNewGame}
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              New Game
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
