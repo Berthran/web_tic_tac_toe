@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:5000'); // Update this URL if your Flask server URL is different
+const socket = io('http://localhost:5000');
 
 export default function Game() {
   const [username, setUsername] = useState('');
