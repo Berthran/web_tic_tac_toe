@@ -128,4 +128,4 @@ def ai_make_move(room):
     check_winner(game)
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0')
+    socketio.run(app, host='localhost')
