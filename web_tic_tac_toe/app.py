@@ -113,12 +113,9 @@ def check_winner(game):
 def ai_make_move(room):
     game = games[room]
     board = game['board']
-    empty_cells = [(row, col) for row in range(3) for col in range(3) if board[row][col] == ' ']
-    
-    if not empty_cells:
-        return
-    
-    row, col = random.choice(empty_cells)
+
+    # Updated the code here <Musa>
+    score, row, col = compute_ai_move(board, 0, True)
     symbol = 'O'
     board[row][col] = symbol
     emit('board_update', {'board': board, 'players': game['players']}, room=room)
@@ -127,5 +124,99 @@ def ai_make_move(room):
 
     check_winner(game)
 
+
+
+def check_board_win(board):
+    """
+        Check if there is a winner
+
+    Args:
+        board: Tic-Tac-Toe board
+
+    Returns:
+        The state of the game
+    """
+    for symbol in ['X', 'O']:
+        if any([
+            all(board[row][col] == symbol
+                for col in range(3)) for row in range(3)
+        ]) or any([
+            all(board[row][col] == symbol
+                for row in range(3)) for col in range(3)
+        ]) or all(board[i][i] == symbol
+                  for i in range(3)) or all(board[i][2 - i] == symbol
+                                            for i in range(3)):
+            if symbol == 'X':
+                return 'X wins'
+            else:
+                return 'O wins'
+
+    for row in range(3):
+        for col in range(3):
+            if board[row][col] == ' ':
+                return "ongoing"
+
+    return "draw"
+
+
+def compute_ai_move(board, depth, max):
+    """
+        Compute AI move using the min max algorithm
+
+    Args:
+        board: The current state of the board
+        depth(int): Number of moves to for a game to end
+        max(bool): Determine to maximize or minimize
+
+
+    Returns:
+        score, row, column
+    """
+    status = check_board_win(board)
+    print(board, status)
+    if status == "draw":
+        print("draw")
+        return 0, 0, 0
+    elif status == "O wins":
+        print("AI wins")
+        return 10 - depth, 0, 0
+    elif status == "X wins":
+        print("AI losses")
+        return depth - 10, 0, 0
+
+    if max:
+        row = -1
+        col = -1
+        bestscore = -70
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == ' ':
+                    board[i][j] = 'O'
+                    score, x, y = compute_ai_move(board, depth+1, False)
+                    board[i][j] = ' '
+                    if score > bestscore:
+                        bestscore = score
+                        row = i
+                        col = j
+
+        return bestscore, row, col
+    else:
+        bestscore = 70
+        row = -1
+        col = -1
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == ' ':
+                    board[i][j] = 'X'
+                    score, x, y = compute_ai_move(board, depth+1, True)
+                    board[i][j] = ' '
+                    if score < bestscore:
+                        bestscore = score
+                        row = i
+                        col = j
+
+        return bestscore, row, col
+
+
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0')
+    socketio.run(app, host='0.0.0.0', port=8080)
