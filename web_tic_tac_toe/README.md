@@ -1,8 +1,56 @@
-# React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Web Tic Tac Toe Game
 
-Currently, two official plugins are available:
+Web Tic Tac Toe is a web based game app that's integrated with Vite and Python-flask. Delivered to make users enjoys a smooth gaming opportunity anywhere while staying connected.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## How to Initiate  the Game
+
+To Initiate this game, it is pertinent to set up some dependencies and resources that will be useless for serving the game right. If you don't already have python, python-pip and npm installed, start by installing that.
+
+- Start by having a virtual environment to avoid unnecessary conflicts with other file system. This should be done in the root directory `web_tic_tac_toe/web_tic_tac_toe`
+
+```bash
+python3 -m venv .venv
+npm install
+```
+
+- Activate the virtual environment 
+
+``` bash
+source .venv/bin/activate
+```
+
+- Install the python libraries needed to host server
+
+```bash
+pip3 install -r requirements.txt
+```
+
+- Start the Server (flask) app
+
+`Terminal 1`
+``` bash
+python3 -m app
+```
+- Start the Client (Vite) app
+
+`Terminal 2`
+``` bash
+npm run dev
+```
+
+This will most likely run as 
+`http://localhost:5173`  if the port is free and open 
+
+
+Start Game with the URL of Vite
+http://localhost:{port}
+
+
+## Libraries/Frameworks Used 
+
+- Flask-cors 
+- Flask-socketio
+- socketio
+- React + Vite
+
