@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 
-const socket = io('http://192.168.0.141:8080'); // Update this URL if your Flask server URL is different
+
+const socket = io('http://localhost:5000');
 
 export default function Game() {
   const [username, setUsername] = useState('');
@@ -65,7 +66,7 @@ export default function Game() {
   function handleCreateRoom() {
     if (username) {
       const generatedRoom = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const chosenSymbol = 'X'; // Default symbol for the player creating the room
+      const chosenSymbol = 'X';
       setRoom(generatedRoom);
       socket.emit('join', { username: username, room: generatedRoom, symbol: chosenSymbol, playWithAI: playWithAI });
     } else {
